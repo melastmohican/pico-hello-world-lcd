@@ -90,17 +90,17 @@ fn main() -> ! {
     let miso = pins.gpio0.into_function::<FunctionSpi>(); // SDA RX
 
     let cs = pins.gpio20.into_push_pull_output();
-    let rst = pins
-        .gpio19
-        .into_push_pull_output_in_state(gpio::PinState::High);
+    // The reset pin needs to be in *high* state in order for the display to operate. 
+    // See https://github.com/almindor/mipidsi/blob/master/mipidsi/src/builder.rs#L129-L130
+    let rst = pins.gpio19.into_push_pull_output_in_state(gpio::PinState::High);
     let dc = pins.gpio18.into_push_pull_output();
 
     // Create an SPI driver instance for the SPI0 device
     let spi = spi::Spi::<_, _, _, 8>::new(pac.SPI0, (mosi, miso, sck)).init(
         &mut pac.RESETS,
         clocks.peripheral_clock.freq(),
-        400000_u32.Hz(),
-        &embedded_hal::spi::MODE_0,
+        16_000_000u32.Hz(),
+        embedded_hal::spi::MODE_0,
     );
 
     let spi_device = ExclusiveDevice::new_no_delay(spi, cs).unwrap();
